@@ -12,6 +12,8 @@ Xournal++ requires the following software to build:
 
 This will open the MINGW64 console. All following steps in this document happen in this console, unless specified otherwise.
 
+For users of Windows on Arm (WOA), please follow the instructions in this [wiki](https://www.msys2.org/wiki/arm64/) to setup your development environment. You should launch the CLANGARM64 console instead of the MINGW64 one. Additionally, when installing any tools or dependencies as described below, you should replace "mingw-w64-x86_64-" with "mingw-w64-clang-aarch64-".
+
 ### Update MSYS2
 
 Open a MSYS2 console (**not** the MINGW64 console -- close them if you have any open) and run the following command twice. Reopen the MSYS2 console each time you run the command.
@@ -44,7 +46,8 @@ pacman -S \
   mingw-w64-x86_64-libsndfile \
   mingw-w64-x86_64-libzip \
   mingw-w64-x86_64-lua \
-  mingw-w64-x86_64-portaudio
+  mingw-w64-x86_64-portaudio \
+  mingw-w64-x86_64-gtksourceview4
 ```
 
 If prompted, confirm or use all default values.
