@@ -1,0 +1,86 @@
+name: Build Installer For Windows
+
+on:
+  workflow_dispatch:
+    inputs:
+      arch:
+        description: 'Architecture'
+        required: true
+        type: choice
+        options:
+          - x64
+          - arm64
+
+jobs:
+  win-build:
+    runs-on: windows-2022
+
+    steps:
+      - name: Setup CMake
+        uses: lukka/get-cmake@latest
+
+      - name: Setup vcpkg cache
+        uses: actions/github-script@v6
+        with:
+          script: |
+            core.exportVariable('ACTIONS_CACHE_URL', process.env.ACTIONS_CACHE_URL || '');
+            core.exportVariable('ACTIONS_RUNTIME_TOKEN', process.env.ACTIONS_RUNTIME_TOKEN || '');
+
+      - name: Build dependencies with vcpkg
+        shell: pwsh
+        env:
+          TRIPLET: ${{ inputs.arch }}-windows
+        run: |
+          & git clone https://github.com/microsoft/vcpkg.git D:\vcpkg
+          Set-Location -Path D:\vcpkg
+          & .\bootstrap-vcpkg.bat
+          & .\vcpkg install --triplet $env:TRIPLET --binarysource="clear;x-gha,readwrite" gtk3 poppler[glib] libxml2 libzip libsndfile portaudio  cairo fontconfig gdk-pixbuf glib libcroco libxml2 pango
+          & .\vcpkg install --triplet $env:TRIPLET librsvg
+          & .\vcpkg install --binarysource="clear;x-gha,readwrite" gettext[tools]
+
+      - name: Setup msys2
+        uses: msys2/setup-msys2@v2
+        with:
+          update: true
+          location: D:\
+          install: >-
+            mingw-w64-x86_64-adwaita-icon-theme
+            mingw-w64-x86_64-hicolor-icon-theme
+
+      - name: Setup ImageMagick & rsvg-convert
+        run: |
+          choco install imagemagick.app --version 7.1.1.2900 -y
+          choco install rsvg-convert -y
+
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          path: ${{ github.workspace }}/code
+
+      - name: Run
+        shell: pwsh
+        run: |
+          cd ${{ github.workspace }}/code/windows-setup
+          & ".\package.ps1"
+        env:
+            VCPKG_ROOT: D:\vcpkg
+            VCPKG_TRIPLET: ${{ inputs.arch }}-windows
+            TARGET_ARCH: ${{ inputs.arch }}
+            IMAGE_MAGICK_DIR: C:\Program Files\ImageMagick-7.1.1-Q16-HDRI
+            ICON_THEME_DIR: D:\msys64\mingw64\share\icons\
+
+      - name: Upload Build Directory
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.arch }}-build
+          path: "${{ github.workspace }}/code/windows-setup"
+          compression-level: 9
+          if-no-files-found: warn
+
+      - name: Upload Installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.arch }}-setup
+          path: "${{ github.workspace }}/code/windows-setup/xournalpp-setup.exe"
+          compression-level: 9
+          if-no-files-found: warn
