@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.14)
 cmake_policy(VERSION ${CMAKE_VERSION})
 ## The CMAKE_OSX_DEPLOYMENT_TARGET must be set before project(), so don't move the following line further down.
 set(CMAKE_OSX_DEPLOYMENT_TARGET "10.15" CACHE STRING "Minimum OS X deployment version" FORCE)
@@ -106,11 +106,11 @@ list(APPEND pkg-module-spec "poppler-glib >= 0.41.0")
 list(APPEND pkg-module-spec "gthread-2.0 >= 2.4.0")
 list(APPEND pkg-module-spec "libxml-2.0 >= 2.0.0")
 list(APPEND pkg-module-spec "libzip >= 1.0.1")
-list(APPEND pkg-module-spec "portaudiocpp >= 12")
 list(APPEND pkg-module-spec "sndfile >= 1.0.25")
 list(APPEND pkg-module-spec "librsvg-2.0 >= 2.40")
 
 pkg_check_modules(GtkSourceView IMPORTED_TARGET "gtksourceview-4 >= 4.0.0")
+pkg_check_modules(PortAudioCpp IMPORTED_TARGET "portaudiocpp >= 12")
 
 # Profiling
 option (ENABLE_PROFILING "Link with gperftools" OFF)
@@ -165,6 +165,22 @@ if (GtkSourceView_FOUND)
     add_compile_definitions(USE_GTK_SOURCEVIEW)
 endif ()
 
+if (NOT PortAudioCpp_FOUND)
+    message("Using FetchContent to download portaudiocpp")
+    include(FetchContent)
+    FetchContent_Declare(
+        portaudiocpp
+        GIT_REPOSITORY https://github.com/PortAudio/portaudio
+        GIT_TAG        master # portaudio hasn't released a new version with CMake support for cpp bindings
+        GIT_SHALLOW    TRUE
+        SOURCE_SUBDIR  bindings/cpp
+    )
+    FetchContent_MakeAvailable(portaudiocpp)
+    if (NOT TARGET portaudiocpp)
+        message(FATAL_ERROR "Failed to fetch portaudiocpp")
+    endif ()
+endif ()
+
 # X11 link settings
 
 # Note: CMAKE_REQUIRED_FIND_PACKAGE is only supported by CMake >= 3.22
@@ -194,6 +210,7 @@ target_link_libraries(external_modules INTERFACE
         PkgConfig::ExternalModules
         $<$<TARGET_EXISTS:Lua::lua>:Lua::lua>
         $<$<TARGET_EXISTS:PkgConfig::GtkSourceView>:PkgConfig::GtkSourceView>
+        $<IF:$<TARGET_EXISTS:PkgConfig::PortAudioCpp>,PkgConfig::PortAudioCpp,portaudiocpp>
         $<$<TARGET_EXISTS:X11::Xi>:X11::Xi>
         $<$<TARGET_EXISTS:X11::X11>:X11::X11>
         $<$<TARGET_EXISTS:Backtrace::backtrace>:Backtrace::backtrace>
