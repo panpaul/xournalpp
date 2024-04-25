@@ -170,7 +170,7 @@ auto Document::createSaveFilename(DocumentType type, const std::string& defaultS
             c = '_';
         }
     }
-    fs::path p = filename;
+    fs::path p = fs::u8path(filename);
     Util::clearExtensions(p);
     return p;
 }

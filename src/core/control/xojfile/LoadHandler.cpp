@@ -357,7 +357,7 @@ void LoadHandler::parseBgSolid() {
 
 void LoadHandler::parseBgPixmap() {
     const char* domain = LoadHandlerHelper::getAttrib("domain", false, this);
-    const fs::path filepath(LoadHandlerHelper::getAttrib("filename", false, this));
+    const fs::path filepath = fs::u8path(LoadHandlerHelper::getAttrib("filename", false, this));
     // in case of a cloned background image, filename is a string representation of the page number from which the image
     // is cloned
 
@@ -412,7 +412,7 @@ void LoadHandler::parseBgPixmap() {
         this->page->setBackgroundImage(img);
     } else if (!strcmp(domain, "clone")) {
         gchar* endptr = nullptr;
-        auto const& filename = filepath.string();
+        auto const& filename = filepath.u8string();
         size_t nr = static_cast<size_t>(g_ascii_strtoull(filename.c_str(), &endptr, 10));
         if (endptr == filename.c_str()) {
             error("%s", FC(_F("Could not read page number for cloned background image: {1}.") % filepath.string()));

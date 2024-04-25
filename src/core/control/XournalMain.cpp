@@ -86,7 +86,7 @@ void initCAndCoutLocales() {
 void initLocalisation() {
 #ifdef ENABLE_NLS
     fs::path localeDir = Util::getGettextFilepath(Util::getLocalePath().u8string().c_str());
-    bindtextdomain(GETTEXT_PACKAGE, localeDir.u8string().c_str());
+    bindtextdomain(GETTEXT_PACKAGE, localeDir.string().c_str());
     textdomain(GETTEXT_PACKAGE);
 
 #ifdef _WIN32
